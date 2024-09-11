@@ -3,6 +3,7 @@ package org.example.expert.domain.manager.controller;
 import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.expert.config.JwtUserExtractor;
 import org.example.expert.config.JwtUtil;
 import org.example.expert.domain.common.annotation.Auth;
 import org.example.expert.domain.common.dto.AuthUser;
@@ -17,12 +18,13 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/todos")
 public class ManagerController {
 
     private final ManagerService managerService;
-    private final JwtUtil jwtUtil;
+    private final JwtUserExtractor jwtUserExtractor;
 
-    @PostMapping("/todos/{todoId}/managers")
+    @PostMapping("/{todoId}/managers")
     public ResponseEntity<ManagerSaveResponse> saveManager(
             @Auth AuthUser authUser,
             @PathVariable long todoId,
@@ -31,19 +33,18 @@ public class ManagerController {
         return ResponseEntity.ok(managerService.saveManager(authUser, todoId, managerSaveRequest));
     }
 
-    @GetMapping("/todos/{todoId}/managers")
+    @GetMapping("/{todoId}/managers")
     public ResponseEntity<List<ManagerResponse>> getMembers(@PathVariable long todoId) {
         return ResponseEntity.ok(managerService.getManagers(todoId));
     }
 
-    @DeleteMapping("/todos/{todoId}/managers/{managerId}")
+    @DeleteMapping("/{todoId}/managers/{managerId}")
     public void deleteManager(
             @RequestHeader("Authorization") String bearerToken,
             @PathVariable long todoId,
             @PathVariable long managerId
     ) {
-        Claims claims = jwtUtil.extractClaims(bearerToken.substring(7));
-        long userId = Long.parseLong(claims.getSubject());
+        long userId = jwtUserExtractor.extractUserId(bearerToken);
         managerService.deleteManager(userId, todoId, managerId);
     }
 }
